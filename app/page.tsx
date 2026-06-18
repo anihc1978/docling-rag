@@ -47,7 +47,8 @@ export default function Home() {
     try {
       const res = await fetch('/api/status')
       const data = await res.json()
-      setDocCount(data.rawChunks ?? 0)
+      // Don't let a cold/empty status instance clobber the optimistic count
+      setDocCount((c) => Math.max(c, data.rawChunks ?? 0))
     } catch { /* ignore */ }
   }, [])
 
@@ -68,6 +69,7 @@ export default function Home() {
       if (data.ok) {
         setIngestStatus({ ok: true, msg: `Indexed ${data.chunks} chunks` })
         setIngestUrl('')
+        setDocCount((c) => c + (data.chunks ?? 0))
         await refreshStatus()
       } else {
         setIngestStatus({ ok: false, msg: data.error ?? 'Ingestion failed' })
@@ -89,6 +91,7 @@ export default function Home() {
       const data = await res.json()
       if (data.ok) {
         setIngestStatus({ ok: true, msg: `Indexed ${data.chunks} chunks from ${data.source}` })
+        setDocCount((c) => c + (data.chunks ?? 0))
         await refreshStatus()
       } else {
         setIngestStatus({ ok: false, msg: data.error ?? 'Upload failed' })

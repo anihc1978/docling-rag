@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  const store = getStore()
+  const store = await getStore()
 
   // Find relevant chunks
   let results: SearchResult[] = []

@@ -3,7 +3,7 @@ import { getStats } from '@/lib/knowledge-store'
 
 export async function GET() {
   return NextResponse.json({
-    ...getStats(),
+    ...(await getStats()),
     hasApiKey: !!process.env.OPENAI_API_KEY,
   })
 }

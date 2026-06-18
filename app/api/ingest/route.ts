@@ -36,7 +36,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<IngestRespons
     if (apiKey) {
       await addChunksWithEmbeddings(chunks, apiKey)
     } else {
-      addRawChunks(chunks)
+      await addRawChunks(chunks)
     }
 
     return NextResponse.json({ ok: true, chunks: chunks.length, source })
