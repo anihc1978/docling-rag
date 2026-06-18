@@ -1,6 +1,6 @@
 import type { Chunk, ChunkWithEmbedding } from './types'
 import { embedTexts } from './embeddings'
-import { put, list } from '@vercel/blob'
+import { put, get } from '@vercel/blob'
 
 // Module-level cache: persists across warm serverless invocations
 const store: {
@@ -28,18 +28,14 @@ function usesBlob() {
 async function loadStore() {
   if (!usesBlob()) return store
   try {
-    const { blobs } = await list({ prefix: STORE_PATH })
-    const blob = blobs.find((b) => b.pathname === STORE_PATH)
-    if (blob) {
-      const res = await fetch(blob.url, { cache: 'no-store' })
-      if (res.ok) {
-        const data = await res.json()
-        store.chunks = data.chunks ?? []
-        store.rawChunks = data.rawChunks ?? []
-        store.initialized = data.initialized ?? false
-      }
+    const result = await get(STORE_PATH, { access: 'private', useCache: false })
+    if (result) {
+      const data = JSON.parse(await new Response(result.stream).text())
+      store.chunks = data.chunks ?? []
+      store.rawChunks = data.rawChunks ?? []
+      store.initialized = data.initialized ?? false
     }
-  } catch { /* fall back to in-memory store */ }
+  } catch { /* no blob yet, or read failed: keep the in-memory store */ }
   return store
 }
 
@@ -47,7 +43,7 @@ async function loadStore() {
 async function saveStore() {
   if (!usesBlob()) return
   await put(STORE_PATH, JSON.stringify(store), {
-    access: 'public',
+    access: 'private',
     allowOverwrite: true,
     contentType: 'application/json',
     cacheControlMaxAge: 0,
